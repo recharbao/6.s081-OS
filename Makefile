@@ -135,6 +135,7 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_cow\
+	$U/_pingpong\
 	$U/_uthread\
 	$U/_call\
 	$U/_kalloctest\
