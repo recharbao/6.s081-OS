@@ -41,6 +41,8 @@ ls(char *path)
     return;
   }
 
+  // printf("type = %d\n", st.type);
+
   switch(st.type){
   case T_FILE:
     printf("%s %d %d %l\n", fmtname(path), st.type, st.ino, st.size);
@@ -57,6 +59,7 @@ ls(char *path)
     while(read(fd, &de, sizeof(de)) == sizeof(de)){
       if(de.inum == 0)
         continue;
+      // printf("de.name = %s\n", de.name);
       memmove(p, de.name, DIRSIZ);
       p[DIRSIZ] = 0;
       if(stat(buf, &st) < 0){

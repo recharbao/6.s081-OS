@@ -137,6 +137,7 @@ UPROGS=\
 	$U/_cow\
 	$U/_pingpong\
 	$U/_primes\
+	$U/_find\
 	$U/_uthread\
 	$U/_call\
 	$U/_kalloctest\
