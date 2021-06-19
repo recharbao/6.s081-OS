@@ -112,6 +112,7 @@ piperead(struct pipe *pi, uint64 addr, int n)
       release(&pi->lock);
       return -1;
     }
+    // printf("sleeping !\n");
     sleep(&pi->nread, &pi->lock); //DOC: piperead-sleep
   }
   for(i = 0; i < n; i++){  //DOC: piperead-copy

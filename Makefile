@@ -136,6 +136,7 @@ UPROGS=\
 	$U/_zombie\
 	$U/_cow\
 	$U/_pingpong\
+	$U/_primes\
 	$U/_uthread\
 	$U/_call\
 	$U/_kalloctest\

@@ -16,6 +16,7 @@
 #include "file.h"
 #include "fcntl.h"
 
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -100,7 +101,10 @@ sys_close(void)
   if(argfd(0, &fd, &f) < 0)
     return -1;
   myproc()->ofile[fd] = 0;
+  // printf("here2: ref = %d\n", f->ref);
   fileclose(f);
+  // printf("here3: ref = %d\n", f->ref);
+  
   return 0;
 }
 
