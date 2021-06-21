@@ -65,14 +65,19 @@ filealloc(void)
   //   }
   // }
 
-  f = bd_malloc(sizeof(struct file));
-  f->ref = 1;
+  if((f = bd_malloc(sizeof(struct file))) > 0) {
+    memset(f, 0, sizeof(struct file));
+    f->ref = 1;
+    release(&ftable.lock);
+    return f;
+  }
+  
   // printf("filealloc: ");
   // bd_print();
   // printf("reference: %d\n", f->ref);
 
   release(&ftable.lock);
-  return f;
+  return 0;
 }
 
 // Increment ref count for file f.
