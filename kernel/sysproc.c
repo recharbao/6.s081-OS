@@ -65,10 +65,10 @@ sys_sbrk(void)
 
   addr = myproc()->sz;
 
-  printf("addr = %d\n", addr);
+  // printf("addr = %d\n", addr);
   if (n < 0){
     myproc()->sz = uvmdealloc(myproc()->pagetable, myproc()->sz, myproc()->sz + n);
-    printf("myproc()->sz = %d\n", myproc()->sz);
+    // printf("myproc()->sz = %d\n", myproc()->sz);
     return addr;
   }
 

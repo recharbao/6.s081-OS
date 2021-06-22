@@ -77,7 +77,8 @@ usertrap(void)
     if(newsz < va) {
       p->killed = 1;
       // panic("newsz < a");
-      exit(0);
+      // exit(-1);
+      goto exit;
     }
 
     // printf("trap myproc()->pid = %d,  myproc()->sz = %d\n", myproc()->pid, myproc()->sz);
@@ -94,7 +95,8 @@ usertrap(void)
     mem = kalloc();
     if(mem == 0) {
       p->killed = 1;
-      panic("trap mem == 0 !");
+      // panic("trap mem == 0 !");
+      exit(-1);
     }
     memset(mem, 0, PGSIZE);
     if (mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
@@ -102,15 +104,18 @@ usertrap(void)
       kfree(mem);
       // printf("here2\n");
       p->killed = 1;
-      panic("trap mappages != 0 !");
+      // panic("trap mappages != 0 !");
+      goto exit;
     }
 
   }else{
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
+    goto exit;
   }
 
+exit:
   if(p->killed)
     exit(-1);
 

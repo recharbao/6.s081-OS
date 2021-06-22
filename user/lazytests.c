@@ -57,12 +57,12 @@ sparse_memory_unmap(char *s)
       printf("error forking\n");
       exit(1);
     } else if (pid == 0) {
-      printf("test2 child: \n");
+      // printf("test2 child: \n");
       sbrk(-1L * REGION_SZ);
       *(char **)i = i;
       exit(0);
     } else {
-      printf("test2 parent: \n");
+      // printf("test2 parent: \n");
       int status;
       wait(&status);
       if (status == 0) {
