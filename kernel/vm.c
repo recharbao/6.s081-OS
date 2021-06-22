@@ -301,6 +301,31 @@ freewalk(pagetable_t pagetable)
   kfree((void*)pagetable);
 }
 
+
+void pteprint(pagetable_t pagetable ,int lev)
+{
+  if(lev > 3) return;
+
+  for(int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      uint64 child = PTE2PA(pte);
+      for(int j = 0; j < lev - 1; j++) {
+        printf("..");
+      }
+      printf("..%d: ", i);
+      printf("pte %p pa %p\n", pte, child);
+      pteprint((pagetable_t)child, lev+1);
+    }
+  }
+}
+
+void vmprint(pagetable_t pagetable)
+{
+    printf("page table: %p\n", pagetable);
+    pteprint(pagetable, 1);
+}
+
 // Free user memory pages,
 // then free page-table pages.
 void
@@ -451,3 +476,4 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
