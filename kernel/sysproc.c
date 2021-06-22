@@ -60,9 +60,12 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = (myproc()->sz += n);
+  // printf("sys_sbrk n = %d!\n", n);
+  addr = myproc()->sz;
+  myproc()->sz+=n;
   // if(growproc(n) < 0)
   //   return -1;
+  // printf("sys_sbrk myproc()->pid = %d,  myproc()->sz = %d\n", myproc()->pid, myproc()->sz);
   return addr;
 }
 
