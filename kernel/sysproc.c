@@ -60,8 +60,19 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
+  
   // printf("sys_sbrk n = %d!\n", n);
+
   addr = myproc()->sz;
+
+  printf("addr = %d\n", addr);
+  if (n < 0){
+    myproc()->sz = uvmdealloc(myproc()->pagetable, myproc()->sz, myproc()->sz + n);
+    printf("myproc()->sz = %d\n", myproc()->sz);
+    return addr;
+  }
+
+
   myproc()->sz+=n;
   // if(growproc(n) < 0)
   //   return -1;

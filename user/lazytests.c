@@ -57,10 +57,12 @@ sparse_memory_unmap(char *s)
       printf("error forking\n");
       exit(1);
     } else if (pid == 0) {
+      printf("test2 child: \n");
       sbrk(-1L * REGION_SZ);
       *(char **)i = i;
       exit(0);
     } else {
+      printf("test2 parent: \n");
       int status;
       wait(&status);
       if (status == 0) {
@@ -131,6 +133,7 @@ main(int argc, char *argv[])
     char *s;
   } tests[] = {
     // { sparse_memory, "lazy alloc"},
+    { sparse_memory, "lazy alloc"},
     { sparse_memory_unmap, "lazy unmap"},
     { oom, "out of memory"},
     { 0, 0},

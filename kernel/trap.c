@@ -76,7 +76,8 @@ usertrap(void)
 
     if(newsz < va) {
       p->killed = 1;
-      panic("newsz < a");
+      // panic("newsz < a");
+      exit(0);
     }
 
     // printf("trap myproc()->pid = %d,  myproc()->sz = %d\n", myproc()->pid, myproc()->sz);
