@@ -1947,15 +1947,23 @@ stacktest(char *s)
   pid = fork();
   if(pid == 0) {
     char *sp = (char *) r_sp();
+    // printf("sp va = %p\n", sp);
+    // printf("*sp = %p\n", *sp);
+    // printf("*sp1 = %p\n", *(sp+1));
+    // printf("*sp2 = %p\n", *(sp+2));
+    // printf("*sp3 = %p\n", *(sp+3));
+    // printf("*sp4 = %p\n", *(sp+4));
     sp -= PGSIZE;
     // the *sp should cause a trap.
-    printf("%s: stacktest: read below stack %p\n", *sp);
+    printf("%s: stacktest: read below stack %p\n", *sp);  // I don't know this sp is what kind of address, the problem reserved.
+    // printf("%s: stacktest: read below stack %p\n", *sp);
     exit(1);
   } else if(pid < 0){
     printf("%s: fork failed\n", s);
     exit(1);
   }
   wait(&xstatus);
+  // printf("xstatus = %d\n", xstatus);
   if(xstatus == -1)  // kernel killed child?
     exit(0);
   else

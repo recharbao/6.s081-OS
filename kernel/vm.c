@@ -5,7 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
-
+#include "spinlock.h"
+#include "proc.h"
 /*
  * the kernel's page table.
  */
@@ -163,6 +164,8 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   for(;;){
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
+    // printf("pte = %p  ", pte);
+    // printf("pa = %p\n", pa);
     if(*pte & PTE_V)
       panic("remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
@@ -335,6 +338,52 @@ void pteprint(pagetable_t pagetable ,int lev)
       pteprint((pagetable_t)child, lev+1);
     }
   }
+}
+
+int wrp(pagetable_t pagetable, uint64 va, int n)
+{
+
+  if(myproc()->sz <= va) {
+    return -1;
+  }
+
+  if(myproc()->ustack > va && va >= myproc()->ustack - PGSIZE) {
+    return -1;
+  }
+
+  char *mem;
+  // uint64 a = PGROUNDUP(va);
+  uint64 a = PGROUNDDOWN(va);
+
+  uint64 i = a;
+  // uint64 b = PGROUNDUP(va+4);
+
+  uint64 b = PGROUNDUP(va+n);
+
+  pte_t* pte;
+
+  for(; i < b; i += PGSIZE) {
+
+    if ((pte = walk(pagetable, i, 1)) != 0 && (*pte & PTE_V))
+    {
+      continue;
+    }
+    
+    
+    mem = kalloc();
+    if (mem == 0){
+      // uvmdealloc(myproc()->pagetable, i, a);
+      return -1;
+    }
+    // printf("there !\n");
+    memset(mem, 0, PGSIZE);
+    if (mappages(pagetable, i, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0) {
+      kfree(mem);
+      // uvmdealloc(myproc()->pagetable, i, a);
+      return -1;
+    }
+  }
+  return 0;
 }
 
 void vmprint(pagetable_t pagetable)

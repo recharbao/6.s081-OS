@@ -16,6 +16,7 @@
 #include "file.h"
 #include "fcntl.h"
 
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -72,9 +73,16 @@ sys_read(void)
   struct file *f;
   int n;
   uint64 p;
+  pagetable_t pp = myproc()->pagetable;
 
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
     return -1;
+
+  if (wrp(pp, p, n) < 0)
+  {
+    return -1;
+  }
+
   return fileread(f, p, n);
 }
 
@@ -85,9 +93,18 @@ sys_write(void)
   int n;
   uint64 p;
 
+  pagetable_t pp = myproc()->pagetable;
+
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
     return -1;
+  // printf("there !\n");
 
+  if (wrp(pp, p, n) < 0)
+  {
+    return -1;
+  }
+  
+  
   return filewrite(f, p, n);
 }
 
@@ -464,6 +481,11 @@ sys_pipe(void)
     return -1;
   if(pipealloc(&rf, &wf) < 0)
     return -1;
+  if (wrp(p->pagetable, fdarray, 4) < 0)
+  {
+    return -1;
+  }
+  
   fd0 = -1;
   if((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0){
     if(fd0 >= 0)

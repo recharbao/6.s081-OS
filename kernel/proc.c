@@ -271,6 +271,8 @@ fork(void)
   // Cause fork to return 0 in the child.
   np->tf->a0 = 0;
 
+  np->ustack = p->ustack;
+
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])

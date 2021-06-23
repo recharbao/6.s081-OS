@@ -70,7 +70,14 @@ exec(char *path, char **argv)
     goto bad;
   uvmclear(pagetable, sz-2*PGSIZE);
   sp = sz;
+
+  // printf("p->pid = %d\n", p->pid);
+  // printf("exec sp = %p\n", sp);
   stackbase = sp - PGSIZE;
+  // printf("exec stackbase = %p\n", stackbase);
+
+  p->ustack = stackbase;
+  
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {

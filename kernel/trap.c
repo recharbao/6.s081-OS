@@ -69,10 +69,16 @@ usertrap(void)
     // ok
   } else if (r_scause() == 13 || r_scause() == 15){
 
-    uint64 va = r_stval();
+    // printf("here trap 13 or 15 !\n");
+
+    uint64 va = (uint64)r_stval();
     char *mem;
     uint64 newsz = myproc()->sz;
     pagetable_t pagetable = myproc()->pagetable;
+
+    // printf("va = %p    newsz = %p\n", va, newsz);
+
+    // printf("va = %p    p->ustack = %p\n", va, p->ustack);
 
     if(newsz < va) {
       p->killed = 1;
@@ -80,6 +86,21 @@ usertrap(void)
       // exit(-1);
       goto exit;
     }
+    // printf("bettween here !\n");
+    // printf("p->pid = %d\n", p->pid);
+    if (p->ustack > va)
+    {
+      // printf("p->ustack = %p\n", p->ustack);
+      p->killed = 1;
+      goto exit;
+    }
+    
+
+    // if(p->kstack > va) {
+    //   printf("va1 = %d    p->kstack1 = %d\n", va, p->kstack);
+    //   p->killed = 1;
+    //   goto exit;
+    // }
 
     // printf("trap myproc()->pid = %d,  myproc()->sz = %d\n", myproc()->pid, myproc()->sz);
     // printf("va = %d   newsz = %d\n", va, newsz);
@@ -99,6 +120,7 @@ usertrap(void)
       exit(-1);
     }
     memset(mem, 0, PGSIZE);
+    // printf("a = %p\n", a);
     if (mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
       // printf("here1\n");
       kfree(mem);

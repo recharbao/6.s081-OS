@@ -136,6 +136,7 @@ filewrite(struct file *f, uint64 addr, int n)
 {
   int r, ret = 0;
 
+  // printf("f->writable = %d\n", f->writable);
   if(f->writable == 0)
     return -1;
 
@@ -176,7 +177,6 @@ filewrite(struct file *f, uint64 addr, int n)
   } else {
     panic("filewrite");
   }
-
   return ret;
 }
 
