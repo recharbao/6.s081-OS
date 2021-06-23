@@ -1,0 +1,22 @@
+1. Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?
+    
+    As pointed out in riscv-spec-v, a0~a7 , fa0~fa7 are passed parameters.
+
+
+2. Where is the function call to f from main? Where is the call to g? (Hint: the compiler may inline functions.).
+    
+    In the main function, there are only the change of the stack pointer and the storage of part of the register value. 
+The explicit call function f is not found, but an immediate number 12 is found, 
+which means that it should be in the compilation process and the compiler will process it. 
+The f function calls the g function similarly.
+
+3. At what address is the function printf located?
+
+AUIPC forms a 32-bit offset from the 20-bit U-immediate, filling in the lowest 12 bits with
+zeros, adds this offset to the pc, then places the result in register rd.
+auipc	ra,0x0  may lock the pc value, jalr sets pc = ra + (1560), ra = pc + 8. 
+
+
+4. What value is in the register ra just after the jalr to printf in main?
+
+    After the printf function returns, pc = ra.
