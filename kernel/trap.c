@@ -67,12 +67,60 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if (r_scause() == 13 || r_scause() == 15) {
+      // printf("here 1!\n");
+      uint64 va = PGROUNDDOWN(r_stval());
+      struct proc *p = myproc();
+      if (va > p->sz)
+      {
+        p->killed = 1;
+        goto end;
+      }
+
+      if(page_asign(va) < 0){
+        // printf("here 3 !\n");
+        goto end;
+      }
+
+    
+      // if ((mem = kalloc()) == 0)
+      // {
+      //   p->killed = 1;
+      //   goto end;
+      // }
+      // pte_t* pte;
+
+      // if((pte = walk(p->pagetable, va, 0)) == 0) {
+      //   p->killed = 1;
+      //   goto end;
+      // }
+
+      // uint64 pa = PTE2PA(*pte);
+      // *pte = *pte&PTE_W;
+      // flags = PTE_FLAGS(*pte);
+
+      // if((pte = walk(p->parent->pagetable, va, 0)) == 0) {
+      //   p->killed = 1;
+      //   goto end;
+      // }
+
+      // *pte = *pte&PTE_W;
+
+      // memmove(mem, (char*)pa, PGSIZE);
+
+      // if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, flags) != 0){
+      //   kfree(pa);
+      //   p->killed = 1;
+      //   goto end;
+      // }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
+    goto end;
   }
 
+end:
   if(p->killed)
     exit(-1);
 
