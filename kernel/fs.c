@@ -295,7 +295,10 @@ ilock(struct inode *ip)
   if(ip == 0 || ip->ref < 1)
     panic("ilock");
 
+  // printf("ilock here6 !\n");
   acquiresleep(&ip->lock);
+
+  // printf("ilock here5 !\n");
 
   if(ip->valid == 0){
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));

@@ -110,8 +110,10 @@ sys_fstat(void)
   struct file *f;
   uint64 st; // user pointer to struct stat
 
+  // printf("here 1 !\n");
   if(argfd(0, 0, &f) < 0 || argaddr(1, &st) < 0)
     return -1;
+  // printf("here 2 !\n");
   return filestat(f, st);
 }
 
@@ -284,6 +286,64 @@ create(char *path, short type, short major, short minor)
 }
 
 uint64
+sys_symlink(void)
+{
+  char target[MAXPATH];
+  char path[MAXPATH];
+  int fd;
+  struct file *f;
+  struct inode *ip;
+  int n1, n2;
+
+  if ((n1 = argstr(0, target, MAXPATH)) < 0 || (n2 = argstr(1, path, MAXPATH) < 0)){
+    return -1;
+  }
+
+  // printf("here1\n");
+
+  begin_op(ROOTDEV);
+
+  // printf("here2\n");
+
+  ip = create(path, T_SYMLINK, 0, 0);  // after create, locked ip
+  // printf("here\n");
+  
+  if(ip == 0){
+      // iunlockput(ip);
+      end_op(ROOTDEV);
+      return -1;
+  }
+  
+  // ilock(ip);
+  // printf("here3\n");
+  if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
+    if(f)
+      fileclose(f);
+    iunlockput(ip);
+    end_op(ROOTDEV);
+    return -1;
+  }
+
+  // printf("here4\n");
+
+  f->type = T_SYMLINK;
+  f->ip = ip;
+
+  writei(ip, 0, (uint64)&n1, 0, 4);
+  writei(ip, 0, (uint64)target, 0, n1);
+  // printf("here5\n");
+
+  iupdate(ip);
+  // printf("here6\n");
+  iunlock(ip);
+  // printf("here7\n");
+  end_op(ROOTDEV);
+  // printf("here8\n");
+
+  return 0;
+}
+
+uint64
 sys_open(void)
 {
   char path[MAXPATH];
@@ -291,36 +351,46 @@ sys_open(void)
   struct file *f;
   struct inode *ip;
   int n;
+  int pathLen;
 
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
 
   begin_op(ROOTDEV);
 
+  // printf("open here -2 \n");
+  // printf("path = %s\n", path);
+
   if(omode & O_CREATE){
+    // printf("open here -1\n");
     ip = create(path, T_FILE, 0, 0);
     if(ip == 0){
       end_op(ROOTDEV);
       return -1;
     }
   } else {
+    // printf("open here -0\n");
     if((ip = namei(path)) == 0){
       end_op(ROOTDEV);
       return -1;
     }
+    // printf("open here +0\n");
     ilock(ip);
+    // printf("ilock !\n");
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op(ROOTDEV);
       return -1;
     }
   }
+  
 
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
     iunlockput(ip);
     end_op(ROOTDEV);
     return -1;
   }
+
 
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
     if(f)
@@ -329,6 +399,49 @@ sys_open(void)
     end_op(ROOTDEV);
     return -1;
   }
+
+
+  // printf("open here 1\n");
+
+
+  if (!(omode & O_NOFOLLOW)){
+    int i = 0;
+    while (ip->type == T_SYMLINK){
+      if (i > 25)
+      {
+        iunlockput(ip);
+        end_op(ROOTDEV);
+        return -1;
+      }
+      // int m = 0;
+      // for(int i = 0; i < 1000000000; i++){
+      //   m += (i % 2) == 0 ? -1 : 1;
+      // }
+      readi(ip, 0, (uint64)&pathLen, 0, 4);
+      readi(ip, 0, (uint64)path, 0, pathLen);
+      iunlockput(ip);
+      // printf("open while here 1\n");
+
+      // printf("path--------  %s\n", path);
+
+      if((ip = namei(path)) == 0){
+        // printf("open while here 2\n");
+        end_op(ROOTDEV);
+        return -1;
+      }
+      ilock(ip);
+      if(ip->type == T_DIR && omode != O_RDONLY){
+        iunlockput(ip);
+        end_op(ROOTDEV);
+        return -1;
+      }
+
+      i++;
+    }
+    
+}
+
+  // printf("open here 2\n");
 
   if(ip->type == T_DEVICE){
     f->type = FD_DEVICE;
@@ -344,6 +457,8 @@ sys_open(void)
 
   iunlock(ip);
   end_op(ROOTDEV);
+
+  // printf("open here 3\n");
 
   return fd;
 }

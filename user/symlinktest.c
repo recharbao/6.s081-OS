@@ -44,9 +44,13 @@ cleanup(void)
 static int
 stat_slink(char *pn, struct stat *st)
 {
+
+  // printf("here 3 ! \n");
   int fd = open(pn, O_RDONLY | O_NOFOLLOW);
+  // printf("here 4 !\n");
   if(fd < 0)
     return -1;
+  // printf("here 5 !\n");
   if(fstat(fd, st) != 0)
     return -1;
   return 0;
@@ -67,43 +71,57 @@ testsymlink(void)
   fd1 = open("/testsymlink/a", O_CREATE | O_RDWR);
   if(fd1 < 0) fail("failed to open a");
 
+  // printf("test here1 !\n");
+
   r = symlink("/testsymlink/a", "/testsymlink/b");
   if(r < 0)
     fail("symlink b -> a failed");
+  // printf("test here2 !\n");
 
   if(write(fd1, buf, sizeof(buf)) != 4)
     fail("failed to write to a");
+  // printf("test here3 !\n");
 
   if (stat_slink("/testsymlink/b", &st) != 0)
     fail("failed to stat b");
+  // printf("test here4 !\n");
   if(st.type != T_SYMLINK)
     fail("b isn't a symlink");
+  // printf("test here5 !\n");
 
   fd2 = open("/testsymlink/b", O_RDWR);
+  // printf("test here6 !\n");
   if(fd2 < 0)
     fail("failed to open b");
   read(fd2, &c, 1);
   if (c != 'a')
     fail("failed to read bytes from b");
+  // printf("test here7 !\n");
 
   unlink("/testsymlink/a");
+  // printf("test here8 !\n");
   if(open("/testsymlink/b", O_RDWR) >= 0)
     fail("Should not be able to open b after deleting a");
+  // printf("test here9 !\n");
 
   r = symlink("/testsymlink/b", "/testsymlink/a");
   if(r < 0)
     fail("symlink a -> b failed");
+  // printf("test here10 !\n");
 
   r = open("/testsymlink/b", O_RDWR);
   if(r >= 0)
     fail("Should not be able to open b (cycle b->a->b->..)\n");
+  // printf("test here11 !\n");
   
   r = symlink("/testsymlink/nonexistent", "/testsymlink/c");
   if(r != 0)
     fail("Symlinking to nonexistent file should succeed\n");
+  // printf("test here12 !\n");
 
   r = symlink("/testsymlink/2", "/testsymlink/1");
   if(r) fail("Failed to link 1->2");
+  // printf("test here13 !\n");
   r = symlink("/testsymlink/3", "/testsymlink/2");
   if(r) fail("Failed to link 2->3");
   r = symlink("/testsymlink/4", "/testsymlink/3");
