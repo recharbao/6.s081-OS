@@ -83,6 +83,7 @@ test0()
       printf("chdir failed\n");
       exit(1);
     }
+    // printf("test  here1 !\n");
     unlink(file);
     createfile(file, N);
     if (chdir("..") < 0) {
@@ -92,6 +93,7 @@ test0()
   }
   ntas(0);
   for(int i = 0; i < NCHILD; i++){
+    // printf("test  here2 !\n");
     dir[0] = '0' + i;
     int pid = fork();
     if(pid < 0){
@@ -109,8 +111,9 @@ test0()
       exit(0);
     }
   }
-
+  // printf("test  here3 !\n");
   for(int i = 0; i < NCHILD; i++){
+    // printf("test  here4 !\n");
     wait(0);
   }
   printf("test0 results:\n");
