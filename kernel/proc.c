@@ -122,7 +122,8 @@ found:
   memset(&p->context, 0, sizeof p->context);
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
-
+  p->intervalticks = 0;
+  
   return p;
 }
 
@@ -434,6 +435,8 @@ wait(uint64 addr)
   }
 }
 
+
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -459,10 +462,25 @@ scheduler(void)
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
+
         p->state = RUNNING;
         c->proc = p;
+        // if(!p->alarm){
+        //   swtch(&c->scheduler, &p->context);
+        // }else{
+        //   swtch(&c->scheduler, &p->alarm_cpoy_context);
+        // }
+        // printf("p->tf->epc = %p\n", p->tf->epc);
         swtch(&c->scheduler, &p->context);
 
+        if (c->alarm_tmpProc) {
+          c->proc = c->alarm_tmpProc;
+          c->proc->state = RUNNING;
+          c->proc->alarm = 1;
+          c->alarm_tmpProc = 0;
+          swtch(&c->scheduler, &c->proc->context);
+        }
+        
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
@@ -477,6 +495,34 @@ scheduler(void)
     }
   }
 }
+
+void alarm(void)
+{
+
+  struct proc *p;
+  uint nowTicks = ticks;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    // printf("ticks = %d\n", p->last_ticks);
+    // printf("p->intervalticks = %d\n", p->intervalticks);
+    // printf("p->alarm = %d\n", p->alarm);
+    if (p->state != UNUSED && p->state != ZOMBIE && 
+      p->intervalticks && p->alarm == 0 &&
+      nowTicks - p->last_ticks >= p->intervalticks) {
+      p->last_ticks = nowTicks;
+      
+      memmove(&p->alarm_cpoy_trapframe, p->tf, sizeof(struct trapframe));
+      p->tf->epc = p->function_address;  // This line of code is difficult to understand, must be combine alarmtest to understand. The use usertrapret to get to address of the function. 
+      // swtch(&p->context, &alarm_proc->context);
+      mycpu()->alarm_tmpProc = p;
+      release(&p->lock);
+      return;
+    }
+    release(&p->lock);
+  }
+}
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -501,6 +547,12 @@ sched(void)
     panic("sched interruptible");
 
   intena = mycpu()->intena;
+  // if(p->alarm) {
+  //   swtch(&p->alarm_cpoy_context, &mycpu()->scheduler);
+  //   p->alarm = 0;
+  // }else {
+  //   swtch(&p->context, &mycpu()->scheduler);
+  // }
   swtch(&p->context, &mycpu()->scheduler);
   mycpu()->intena = intena;
 }
@@ -509,6 +561,7 @@ sched(void)
 void
 yield(void)
 {
+  // printf("inner yield !\n");
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
@@ -681,3 +734,4 @@ procdump(void)
     printf("\n");
   }
 }
+

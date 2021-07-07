@@ -22,6 +22,7 @@ struct context {
 struct cpu {
   struct proc *proc;          // The process running on this cpu, or null.
   struct context scheduler;   // swtch() here to enter scheduler().
+  struct proc *alarm_tmpProc;
   int noff;                   // Depth of push_off() nesting.
   int intena;                 // Were interrupts enabled before push_off()?
 };
@@ -104,7 +105,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  uint64 last_ticks;
+  uint last_ticks;
   int intervalticks;
   uint64 function_address;
+  int alarm;
+  struct trapframe alarm_cpoy_trapframe;
 };

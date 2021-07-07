@@ -104,10 +104,20 @@ sys_sigalarm(void) {
   argint(0, &intervalticks) < 0 ||
   argaddr(1, &handler) < 0) return -1;
   // printf("handler = %p\n", handler);
+  struct proc *p = myproc();
+  p->function_address = handler;
+  p->intervalticks = intervalticks;
+  p->last_ticks = ticks;
+  
   return 0;
 }
 
 uint64
 sys_sigreturn(void) {
+
+  // printf("here !");
+  struct proc* p = myproc();
+  p->alarm = 0;
+  memmove(p->tf, &p->alarm_cpoy_trapframe, sizeof(struct trapframe));
   return 0;
 }

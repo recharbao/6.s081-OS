@@ -36,13 +36,21 @@ trapinithart(void)
 void
 usertrap(void)
 {
+  // printf("usertrap !\n");
   int which_dev = 0;
 
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
+  // int m;
+  // for(int i = 0; i < 1000000000; i++){
+  //   m += (i % 2 == 0 ? 1 : -1);
+  // }
+
   // send interrupts and exceptions to kerneltrap(),
   // since we're now in the kernel.
+
+  // printf("usertrap !\n");
   w_stvec((uint64)kernelvec);
 
   struct proc *p = myproc();
@@ -64,6 +72,7 @@ usertrap(void)
     // so don't enable until done with those registers.
     intr_on();
 
+    // printf("syscall !\n");
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
@@ -73,20 +82,20 @@ usertrap(void)
     p->killed = 1;
   }
 
-  if(p->killed)
+  if(p->killed) {
+    // printf("exit !\n");
     exit(-1);
+  }
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
-    struct proc *p = myproc();
-    if ((p->last_ticks - ticks) == p->intervalticks)
-    {
-      
-    }
-    
+    alarm();
+    // printf("yield !\n");
     yield();
+    // printf("yield !\n");
+    // printf("ticks = %d\n", ticks);
   }
-
+  // printf("usertrap !\n");
   usertrapret();
 }
 
@@ -102,8 +111,16 @@ usertrapret(void)
   // now from kerneltrap() to usertrap().
   intr_off();
 
+  // int m = 0;
+  // for(int i = 0; i < 1000000000; i++){
+  //   m += (i % 2 == 0 ? 1 : -1);
+  // }
+  // printf("usertrapret before!\n");
+
   // send syscalls, interrupts, and exceptions to trampoline.S
   w_stvec(TRAMPOLINE + (uservec - trampoline));
+
+  // printf("usertrapret after!\n");
 
   // set up trapframe values that uservec will need when
   // the process next re-enters the kernel.
@@ -145,11 +162,18 @@ kerneltrap()
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
   
+  
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
   if(intr_get() != 0)
     panic("kerneltrap: interrupts enabled");
+  
+  // int m;
+  // for(int i = 0; i < 1000000000; i++){
+  //   m += (i % 2 == 0 ? 1 : -1);
+  // }
 
+  // printf("kerneltrap !\n");
   if((which_dev = devintr()) == 0){
     printf("scause %p\n", scause);
     printf("sepc=%p stval=%p\n", r_sepc(), r_stval());
@@ -169,6 +193,7 @@ kerneltrap()
 void
 clockintr()
 {
+  // printf("clockintr !\n");
   acquire(&tickslock);
   ticks++;
   wakeup(&ticks);
@@ -201,6 +226,7 @@ devintr()
     plic_complete(irq);
     return 1;
   } else if(scause == 0x8000000000000001L){
+    // printf("soft interrupt !\n");
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
 
