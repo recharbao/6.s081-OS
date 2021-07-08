@@ -77,12 +77,11 @@ usertrap(void)
         goto end;
       }
 
-      if(page_asign(va) < 0){
+      if(page_asign(p->parent->pagetable, p->pagetable, va) < 0){
         // printf("here 3 !\n");
         goto end;
       }
 
-    
       // if ((mem = kalloc()) == 0)
       // {
       //   p->killed = 1;
