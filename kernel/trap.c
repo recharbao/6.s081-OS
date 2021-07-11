@@ -71,14 +71,24 @@ usertrap(void)
       // printf("here 1!\n");
       uint64 va = PGROUNDDOWN(r_stval());
       struct proc *p = myproc();
+      //printf("trap 13 or 15 !\n");
       if (va > p->sz)
       {
+        // printf("trap va > sz !\n");
         p->killed = 1;
         goto end;
       }
 
-      if(page_asign(p->parent->pagetable, p->pagetable, va) < 0){
+      // if(page_asign(p->parent->pagetable, p->pagetable, va) < 0){
+      //   printf("here 3 !\n");
+      //   printf("trap  page_asign !\n");
+      //   goto end;
+      // }
+
+      if(page_asign(p->pagetable, va) < 0){
         // printf("here 3 !\n");
+        // printf("trap  page_asign !\n");
+        p->killed = 1;
         goto end;
       }
 
@@ -113,6 +123,7 @@ usertrap(void)
       //   goto end;
       // }
   } else {
+    // printf("trap else !\n");
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
@@ -120,8 +131,11 @@ usertrap(void)
   }
 
 end:
-  if(p->killed)
+  if(p->killed) {
+    // printf("trap exit !\n");
     exit(-1);
+  }
+    
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
