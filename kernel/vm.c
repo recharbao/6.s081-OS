@@ -1,10 +1,14 @@
 #include "param.h"
 #include "types.h"
+#include "spinlock.h"
 #include "memlayout.h"
 #include "elf.h"
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "proc.h"
+#include "sleeplock.h"
+#include "file.h"
 
 /*
  * the kernel's page table.
@@ -186,6 +190,10 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 size, int do_free)
 
   a = PGROUNDDOWN(va);
   last = PGROUNDDOWN(va + size - 1);
+
+  // printf("a = %p\n", va);
+  // printf("size = %p\n", size);
+  // printf("last = %p\n", last);
   for(;;){
     if((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
@@ -286,6 +294,7 @@ uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
 static void
 freewalk(pagetable_t pagetable)
 {
+  // printf("freewalk p->pid = %d\n", myproc()->pid);
   // there are 2^9 = 512 PTEs in a page table.
   for(int i = 0; i < 512; i++){
     pte_t pte = pagetable[i];
@@ -449,5 +458,65 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return 0;
   } else {
     return -1;
+  }
+}
+
+int page_asgin(pagetable_t pagetable, uint64 vadown, uint64 va)
+{
+  char* mem = kalloc();
+  if (mem == 0) {
+    return -1;
+  }
+
+  memset(mem, 0, PGSIZE);
+
+  if (mappages(pagetable, vadown, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0) {
+    kfree(mem);
+    return -1;
+  }
+
+  printf("va = %p\n", va);
+  page_read(va);
+  
+  return 1;
+}
+
+int page_read(uint64 va)
+{
+  struct proc* p = myproc();
+  struct VMA *v;
+
+  for(int i = 0; i < NVMA; i++) {
+    if(p->vma[i].vma_start <= va && p->vma[i].vma_end > va) {
+      v = &p->vma[i];
+      ilock(v->f->ip);
+      int n = readi(v->f->ip, 1, v->vma_start+(((va-v->vma_start)/PGSIZE) * PGSIZE), 
+      v->offset+(((va-v->vma_start)/PGSIZE) * PGSIZE), PGSIZE);
+
+      // printf("v->length = %d\n", v->length);
+      // printf("v->read_length = %d\n", v->read_length);
+      // if(n < v->length) {
+      //   v->read_length = n;
+      // }
+
+      printf("n = %d\n", n);
+      printf("v->length = %d\n", v->length);
+      iunlock(v->f->ip);
+      return 1;
+    }
+  }
+  return -1;
+}
+
+void exit_free()
+{
+  struct proc *p = myproc();
+  pte_t *pte;
+  uint64 a = p->vma[0].vma_start;
+  uint64 b = p->vma[NVMA-1].vma_end;
+  for(; a < b; a += PGSIZE){
+    if((pte = walk(p->pagetable, a, 0)) != 0) {
+      *pte = *pte & ~PTE_V;
+    }
   }
 }

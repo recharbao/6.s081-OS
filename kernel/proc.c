@@ -123,6 +123,13 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  for(int i = 0; i < NVMA; i++) {
+    p->vma[i].status = 0;
+    p->vma[i].vma_start = mmap_start + i * VMASIZE;
+    p->vma[i].vma_end = p->vma[i].vma_start + VMASIZE;
+    p->vma[i].read_length = 0;
+  }
+
   return p;
 }
 
@@ -135,8 +142,9 @@ freeproc(struct proc *p)
   if(p->tf)
     kfree((void*)p->tf);
   p->tf = 0;
-  if(p->pagetable)
+  if(p->pagetable) {
     proc_freepagetable(p->pagetable, p->sz);
+  }
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -263,6 +271,8 @@ fork(void)
   }
   np->sz = p->sz;
 
+  np->vmastatue = p->vmastatue;
+
   np->parent = p;
 
   // copy saved user registers.
@@ -275,6 +285,13 @@ fork(void)
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
+
+  for (int i = 0; i < NVMA; i++) {
+    if(p->vma[i].status) {
+      np->vma[i] = p->vma[i];
+      // filedup(np->vma[i].f);
+    }
+  }
   np->cwd = idup(p->cwd);
 
   safestrcpy(np->name, p->name, sizeof(p->name));
@@ -282,6 +299,8 @@ fork(void)
   pid = np->pid;
 
   np->state = RUNNABLE;
+
+
 
   release(&np->lock);
 
@@ -324,7 +343,7 @@ exit(int status)
 
   if(p == initproc)
     panic("init exiting");
-
+  // printf("exit1 !\n");
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){
     if(p->ofile[fd]){
@@ -333,11 +352,19 @@ exit(int status)
       p->ofile[fd] = 0;
     }
   }
+  // printf("exit2 !\n");
+
+  if(p->vmastatue)
+    exit_free();
+
+  // printf("exit3 !\n");
 
   begin_op(ROOTDEV);
   iput(p->cwd);
   end_op(ROOTDEV);
   p->cwd = 0;
+
+  // printf("exit4 !\n");
 
   // we might re-parent a child to init. we can't be precise about
   // waking up init, since we can't acquire its lock once we've
@@ -348,6 +375,8 @@ exit(int status)
   wakeup1(initproc);
   release(&initproc->lock);
 
+  // printf("exit5 !\n");
+
   // grab a copy of p->parent, to ensure that we unlock the same
   // parent we locked. in case our parent gives us away to init while
   // we're waiting for the parent lock. we may then race with an
@@ -357,7 +386,7 @@ exit(int status)
   acquire(&p->lock);
   struct proc *original_parent = p->parent;
   release(&p->lock);
-  
+  // printf("exit1 !\n");
   // we need the parent's lock in order to wake it up from wait().
   // the parent-then-child rule says we have to lock it first.
   acquire(&original_parent->lock);
@@ -366,17 +395,20 @@ exit(int status)
 
   // Give any children to init.
   reparent(p);
-
+  // printf("exit2 !\n");
   // Parent might be sleeping in wait().
   wakeup1(original_parent);
-
+  // printf("exit3 !\n");
   p->xstate = status;
   p->state = ZOMBIE;
-
+  // printf("exit4 !\n");
   release(&original_parent->lock);
-
+  // printf("exit5 !\n");
   // Jump into the scheduler, never to return.
+  // printf("exit1 !\n");
+  // printf("p->pid = %d\n", p->pid);
   sched();
+  // printf("exit2 !\n");
   panic("zombie exit");
 }
 
