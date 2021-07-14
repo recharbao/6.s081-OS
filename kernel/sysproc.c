@@ -135,8 +135,8 @@ uint64 sys_mmap(void)
       p->vma[i].status = 1;
       p->vma[i].offset = offset;
 
-      printf("length = %d\n", length);
-      printf("p->ofile[fd].size = %d\n", p->ofile[fd]->ip->size);
+      // printf("length = %d\n", length);
+      // printf("p->ofile[fd].size = %d\n", p->ofile[fd]->ip->size);
       int sz = PGROUNDUP(p->ofile[fd]->ip->size);
     
       while(sz < length) {
@@ -148,15 +148,15 @@ uint64 sys_mmap(void)
 
         memset(mem, 0, PGSIZE);
 
-        if (mappages(p->pagetable, p->vma[i].vma_start+sz+1, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0) {
+        if (mappages(p->pagetable, p->vma[i].vma_start+sz, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0) {
           kfree(mem);
           return -1;
         }
         sz += PGSIZE;
       }
 
-      printf("after  length = %d\n", length);
-      printf("after   p->ofile[fd].size = %d\n", p->ofile[fd]->ip->size);
+      // printf("after  length = %d\n", length);
+      // printf("after   p->ofile[fd].size = %d\n", p->ofile[fd]->ip->size);
 
       return p->vma[i].vma_start;
     }

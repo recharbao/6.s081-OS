@@ -122,7 +122,7 @@ mmap_test(void)
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
 
-  printf("here1 !\n");
+  // printf("here1 !\n");
   // should be able to map file opened read-only with private writable
   // mapping
   p = mmap(0, PGSIZE*2, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -136,7 +136,7 @@ mmap_test(void)
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (2)");
 
-  printf("here2 !\n");
+  // printf("here2 !\n");
 
   // check that mmap doesn't allow read/write mapping of a
   // file opened read-only.
@@ -148,7 +148,7 @@ mmap_test(void)
   if (close(fd) == -1)
     err("close");
 
-  printf("here3 !\n");
+  // printf("here3 !\n");
 
   // check that mmap does allow read/write mapping of a
   // file opened read/write.
@@ -159,12 +159,12 @@ mmap_test(void)
     err("mmap (3)");
   if (close(fd) == -1)
     err("close");
-  printf("read file : \n");
+  // printf("read file : \n");
 
   // check that the mapping still works after close(fd).
   _v1(p);
 
-  printf("here4 !\n");
+  // printf("here4 !\n");
   // write the mapped memory.
   for (i = 0; i < PGSIZE*2; i++)
     p[i] = 'Z';
@@ -172,7 +172,7 @@ mmap_test(void)
   // unmap just the first two of three pages of mapped memory.
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (3)");
-  printf("here5 !\n");
+  // printf("here5 !\n");
 
   // check that the writes to the mapped memory were
   // written to the file.
@@ -202,7 +202,7 @@ mmap_test(void)
   // if (munmap(p+PGSIZE*2, PGSIZE) == -1)
   //   err("munmap (4)");
     
-  printf("here6 !\n");
+  // printf("here6 !\n");
 
   //
   // mmap two files at the same time.
@@ -275,7 +275,7 @@ fork_test(void)
   //   printf("value[%d] = %c\n", i, *(p1+i));
   // }
 
-  printf("here1 !\n");
+  // printf("here1 !\n");
   if(*(p1+PGSIZE) != 'A')
     err("fork mismatch (1)");
 
@@ -283,18 +283,18 @@ fork_test(void)
     err("fork");
   if (pid == 0) {
     _v1(p1);
-    printf("here fork1 !\n");
+    // printf("here fork1 !\n");
     munmap(p1, PGSIZE); // just the first page
-    printf("here fork2 !\n");
+    // printf("here fork2 !\n");
     exit(0); // tell the parent that the mapping looks OK.
-    printf("here fork3 !\n");
+    // printf("here fork3 !\n");
   }
 
-  printf("here2 !\n");
+  // printf("here2 !\n");
   int status = -1;
   wait(&status);
 
-  printf("here3 !\n");
+  // printf("here3 !\n");
 
   if(status != 0){
     printf("fork_test failed\n");

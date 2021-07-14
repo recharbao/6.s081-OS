@@ -475,7 +475,8 @@ int page_asgin(pagetable_t pagetable, uint64 vadown, uint64 va)
     return -1;
   }
 
-  printf("va = %p\n", va);
+  // printf("va = %p\n", va);
+  // if(myproc()->vmastatue)
   page_read(va);
   
   return 1;
@@ -490,7 +491,7 @@ int page_read(uint64 va)
     if(p->vma[i].vma_start <= va && p->vma[i].vma_end > va) {
       v = &p->vma[i];
       ilock(v->f->ip);
-      int n = readi(v->f->ip, 1, v->vma_start+(((va-v->vma_start)/PGSIZE) * PGSIZE), 
+      readi(v->f->ip, 1, v->vma_start+(((va-v->vma_start)/PGSIZE) * PGSIZE), 
       v->offset+(((va-v->vma_start)/PGSIZE) * PGSIZE), PGSIZE);
 
       // printf("v->length = %d\n", v->length);
@@ -499,8 +500,8 @@ int page_read(uint64 va)
       //   v->read_length = n;
       // }
 
-      printf("n = %d\n", n);
-      printf("v->length = %d\n", v->length);
+      // printf("n = %d\n", n);
+      // printf("v->length = %d\n", v->length);
       iunlock(v->f->ip);
       return 1;
     }
