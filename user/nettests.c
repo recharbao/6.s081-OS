@@ -41,6 +41,10 @@ ping(uint16 sport, uint16 dport, int attempts)
   }
 
   close(fd);
+  // printf("obuf = %s\n", obuf);
+  // printf("ibuf = %s\n", ibuf);
+  // printf("cc = %d\n", cc);
+  // printf("sizeof(obuf) = %d\n", sizeof(obuf));
   if (strcmp(obuf, ibuf) || cc != sizeof(obuf)){
     fprintf(2, "ping didn't receive correct payload\n");
     exit(1);

@@ -364,7 +364,11 @@ void net_rx(struct mbuf *m)
     return;
   }
 
+
   type = ntohs(ethhdr->type);
+
+  // printf("type = %p\n", type);
+
   if (type == ETHTYPE_IP)
     net_rx_ip(m);
   else if (type == ETHTYPE_ARP)

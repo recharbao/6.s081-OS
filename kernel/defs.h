@@ -67,10 +67,14 @@ int             writei(struct inode*, int, uint64, uint, uint);
 void            net_rx(struct mbuf*);
 void            net_tx_udp(struct mbuf*, uint32, uint16, uint16);
 
+
 // sysnet.c
 void            sockinit(void);
 int             sockalloc(struct file **, uint32, uint16, uint16);
 void            sockrecvudp(struct mbuf*, uint32, uint16, uint16);
+void            close_socket(struct sock*);
+int             read_socket(struct sock*, uint64, int);
+int             write_socket(struct sock*, uint64, int);
 
 // ramdisk.c
 void            ramdiskinit(void);

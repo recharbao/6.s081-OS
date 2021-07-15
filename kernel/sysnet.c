@@ -80,12 +80,104 @@ bad:
   return -1;
 }
 
+
 //
 // Your code here.
 //
 // Add and wire in methods to handle closing, reading,
 // and writing for network sockets.
 //
+
+void close_socket(struct sock *so)
+{
+  // printf("close_socket ! \n");
+  // acquire(&lock);
+  struct sock *s = sockets;
+  if (s->next == 0) {
+    sockets = 0;
+  }
+  while(s && s->next != so) {
+    s = s->next;
+    // printf("sadas\n");
+  }
+  if(s)
+    s->next = so->next;
+  // release(&lock);
+  kfree(so);
+  // printf("close_socket end !\n");
+}
+
+
+int write_socket(struct sock *so, uint64 addr, int n)
+{
+
+  // printf("write_socket here 0 !\n");
+
+  struct proc *pr = myproc();
+
+  acquire(&so->lock);
+  int headeroom = sizeof(struct udp) + sizeof(struct ip) + sizeof(struct eth);
+  struct mbuf *b = mbufalloc(headeroom);
+
+  // printf("addr = %p\n", addr);
+  
+  // uint len = (uint)strlen((char*)addr);
+  // printf("write_socket here 2 !\n");
+  mbufput(b, n);
+
+  if(copyin(pr->pagetable, b->head, addr, b->len) == -1) {
+    release(&so->lock);
+    mbuffree(b);
+    return -1;
+  }
+  
+  net_tx_udp(b, so->raddr, so->lport, so->rport);
+  release(&so->lock);
+  
+
+  return n;
+}
+
+int read_socket(struct sock *so, uint64 addr, int n)
+{
+
+  // printf("read_socket !\n");
+  struct proc *pr = myproc();
+
+  acquire(&so->lock);
+  while(mbufq_empty(&so->rxq)) {
+    // printf("read_socket empty !\n");
+    if (pr->killed) {
+      release(&so->lock);
+      return -1;
+    }
+    sleep(&so->lport, &so->lock);
+  }
+
+  // printf("read_socket here !\n");
+
+  struct mbuf *b = mbufq_pophead(&so->rxq);
+  // int len = strlen(b->head)+1;
+  int len = b->len;       // There is a difference between the two, first may be lost 0
+  if(copyout(pr->pagetable, addr, b->head, len) == -1) {
+      release(&so->lock);
+      mbuffree(b);
+      return -1;
+  }
+  // wakeup(&so->rport);
+  release(&so->lock);
+
+  // b->len -= (n < b->len ? n : b->len);
+  // if (b->len == 0){
+  mbuffree(b);
+  // }
+
+  // printf("b->len = %d\n", b->len);
+  // printf("read_socket (n < b->len ? n : b->len) = %d\n", (n < b->len ? n : b->len));
+  // printf("strlen(b->head)+1 = %d\n", len);
+  return len;
+}
+
 
 // called by protocol handler layer to deliver UDP packets
 void
@@ -98,5 +190,20 @@ sockrecvudp(struct mbuf *m, uint32 raddr, uint16 lport, uint16 rport)
   // any sleeping reader. Free the mbuf if there are no sockets
   // registered to handle it.
   //
-  mbuffree(m);
+  // printf("sockrecvudp !\n");
+  struct sock *first = sockets;
+  while(first) {
+    if(first->raddr == raddr && first->lport == lport && first->rport == rport) {
+      // wakeup(&first->lport);
+      break;
+    }
+    first = first->next;
+  }
+
+  if(!first)
+    mbuffree(m);
+  mbufq_pushtail(&first->rxq, m);
+  // __sync_synchronize();
+
+  wakeup(&first->lport);
 }
