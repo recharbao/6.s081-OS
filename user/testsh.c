@@ -144,6 +144,8 @@ one(char *cmd, char *expect, int tight)
 
   if(strstr(out, expect) != 0){
     if(tight && strlen(out) > strlen(expect) + 10){
+      // printf("strlen(out) = %d\n", strlen(out));
+      // printf("strlen(expect) + 10 = %d\n", strlen(expect) + 10);
       fprintf(2, "testsh: saw expected output, but too much else as well\n");
       return 0; // fail
     }
